@@ -40,20 +40,28 @@ export function AdminUserManagement() {
     try {
       setLoading(true);
       
-      // Fetch users with their roles
-      const { data, error } = await supabase
+      // Fetch profiles first
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `);
+        .select('*');
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      const usersWithRoles = data.map((user: any) => ({
-        ...user,
-        role: user.user_roles[0]?.role || 'user'
-      }));
+      // Fetch user roles
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) throw rolesError;
+
+      // Combine the data manually
+      const usersWithRoles = profiles?.map((profile) => {
+        const userRole = roles?.find(role => role.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: userRole?.role || 'user'
+        };
+      }) || [];
 
       setUsers(usersWithRoles);
     } catch (error: any) {
@@ -104,7 +112,7 @@ export function AdminUserManagement() {
         .from('profiles')
         .select('user_id, email, display_name')
         .eq('email', newAdminEmail.trim())
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
