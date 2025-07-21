@@ -13,6 +13,8 @@ interface ResetPasswordRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log(`${req.method} ${req.url}`);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,9 +33,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
+    console.log("Created admin client");
+
     // Get the authenticated user from the request
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
+      console.log("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         {
@@ -45,9 +50,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Verify the requesting user is an admin
     const jwt = authHeader.replace("Bearer ", "");
+    console.log("Verifying user token");
+    
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
     
     if (userError || !user) {
+      console.log("Invalid token:", userError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         {
@@ -56,6 +64,8 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    console.log("User verified:", user.email);
 
     // Check if user has admin role
     const { data: userRole, error: roleError } = await supabaseAdmin
@@ -66,6 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (roleError || !userRole) {
+      console.log("Access denied - not admin:", roleError?.message);
       return new Response(
         JSON.stringify({ error: "Access denied: Admin privileges required" }),
         {
@@ -75,10 +86,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log("Admin role verified");
+
     // Parse request body
     const { userId, newPassword }: ResetPasswordRequest = await req.json();
 
     if (!userId || !newPassword) {
+      console.log("Missing userId or newPassword");
       return new Response(
         JSON.stringify({ error: "Missing userId or newPassword" }),
         {
@@ -87,6 +101,8 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    console.log("Resetting password for user:", userId);
 
     // Reset the user's password using admin privileges
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
@@ -105,6 +121,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log("Password reset successful");
+
     // Log the action for audit purposes
     await supabaseAdmin
       .from("audit_logs")
@@ -115,6 +133,8 @@ const handler = async (req: Request): Promise<Response> => {
         record_id: userId,
         new_values: { reset_by_admin: true }
       });
+
+    console.log("Audit log created");
 
     return new Response(
       JSON.stringify({ success: true, message: "Password reset successfully" }),
