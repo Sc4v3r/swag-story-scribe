@@ -34,6 +34,7 @@ export function AdminUserManagement() {
   const [promoting, setPromoting] = useState(false);
   const [resettingPassword, setResettingPassword] = useState<string | null>(null);
   const [tempPassword, setTempPassword] = useState('');
+  const [resetDialogOpen, setResetDialogOpen] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
@@ -289,6 +290,12 @@ export function AdminUserManagement() {
     }
   };
 
+  const handleResetDialogClose = () => {
+    setResetDialogOpen(null);
+    setTempPassword('');
+    setResettingPassword(null);
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -433,12 +440,20 @@ export function AdminUserManagement() {
                       </Button>
                      )}
                      
-                     <Dialog>
+                     <Dialog 
+                       open={resetDialogOpen === user.user_id} 
+                       onOpenChange={(open) => {
+                         if (!open) {
+                           handleResetDialogClose();
+                         }
+                       }}
+                     >
                        <DialogTrigger asChild>
                          <Button
                            size="sm"
                            variant="outline"
                            disabled={resettingPassword === user.user_id}
+                           onClick={() => setResetDialogOpen(user.user_id)}
                          >
                            {resettingPassword === user.user_id ? (
                              <>
@@ -492,7 +507,7 @@ export function AdminUserManagement() {
                              <>
                                <Button
                                  variant="outline"
-                                 onClick={() => setTempPassword('')}
+                                 onClick={handleResetDialogClose}
                                >
                                  Cancel
                                </Button>
@@ -505,7 +520,7 @@ export function AdminUserManagement() {
                              </>
                            ) : (
                              <Button
-                               onClick={() => setTempPassword('')}
+                               onClick={handleResetDialogClose}
                                className="w-full"
                              >
                                Close
