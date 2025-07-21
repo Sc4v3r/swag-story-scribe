@@ -231,12 +231,21 @@ const Stories = () => {
     }
   };
 
-  const getUniqueVerticals = () => {
-    const verticals = stories
-      .map(story => story.business_vertical)
-      .filter(Boolean)
-      .filter((value, index, self) => self.indexOf(value) === index);
-    return verticals as string[];
+  const getPredefinedVerticals = () => {
+    return [
+      'Financial Services',
+      'Healthcare',
+      'Government',
+      'Manufacturing',
+      'Technology',
+      'Retail',
+      'Education',
+      'Energy & Utilities',
+      'Professional Services',
+      'Telecommunications',
+      'Insurance',
+      'Transportation'
+    ];
   };
 
   console.log('Render state - loading:', loading, 'error:', error, 'stories count:', stories.length);
@@ -334,7 +343,7 @@ const Stories = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All verticals</SelectItem>
-              {getUniqueVerticals().map((vertical) => (
+              {getPredefinedVerticals().map((vertical) => (
                 <SelectItem key={vertical} value={vertical}>
                   {vertical}
                 </SelectItem>
