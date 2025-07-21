@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Stories from "./pages/Stories";
 import StoryDetail from "./pages/StoryDetail";
 import WriteStory from "./pages/WriteStory";
+import AdminPanel from "./pages/AdminPanel";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -73,6 +74,11 @@ const App = () => (
             <Route path="/write" element={
               <ProtectedRoute>
                 <WriteStory />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminPanel />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
