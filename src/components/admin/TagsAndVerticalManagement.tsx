@@ -66,7 +66,7 @@ export function TagsAndVerticalManagement() {
   const fetchBusinessVerticals = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('stories')
         .select('business_vertical')
         .not('business_vertical', 'is', null);
 
@@ -74,9 +74,9 @@ export function TagsAndVerticalManagement() {
       
       // Count occurrences of each business vertical
       const verticalCounts: { [key: string]: number } = {};
-      data?.forEach((profile) => {
-        if (profile.business_vertical) {
-          verticalCounts[profile.business_vertical] = (verticalCounts[profile.business_vertical] || 0) + 1;
+      data?.forEach((story) => {
+        if (story.business_vertical) {
+          verticalCounts[story.business_vertical] = (verticalCounts[story.business_vertical] || 0) + 1;
         }
       });
 
@@ -193,7 +193,7 @@ export function TagsAndVerticalManagement() {
   const updateBusinessVertical = async (oldValue: string, newValue: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('stories')
         .update({ business_vertical: newValue.trim() })
         .eq('business_vertical', oldValue);
 
@@ -407,8 +407,8 @@ export function TagsAndVerticalManagement() {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Manage business verticals used across user profiles. You can rename existing verticals 
-                  and all users assigned to that vertical will be updated automatically.
+                  Manage business verticals used across stories. You can rename existing verticals 
+                  and all stories assigned to that vertical will be updated automatically.
                 </p>
                 
                 <div className="space-y-2">
@@ -419,7 +419,7 @@ export function TagsAndVerticalManagement() {
                           {vertical.value}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          {vertical.count} user{vertical.count !== 1 ? 's' : ''}
+                          {vertical.count} stor{vertical.count !== 1 ? 'ies' : 'y'}
                         </span>
                       </div>
                       <Button
@@ -440,7 +440,7 @@ export function TagsAndVerticalManagement() {
                   
                   {businessVerticals.length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
-                      No business verticals found. Users can set their business vertical in their profiles.
+                      No business verticals found. Business verticals are set when creating stories.
                     </div>
                   )}
                 </div>
