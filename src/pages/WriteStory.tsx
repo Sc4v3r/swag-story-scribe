@@ -66,13 +66,58 @@ const WriteStory = () => {
     }
   };
 
+  // Input sanitization function
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, '') // Remove event handlers
+      .trim();
+  };
+
+  // Enhanced validation function
+  const validateInput = (title: string, content: string): string | null => {
+    const trimmedTitle = title.trim();
+    const trimmedContent = content.trim();
+
+    if (!trimmedTitle || !trimmedContent) {
+      return 'Please fill in both title and content';
+    }
+
+    if (trimmedTitle.length < 1 || trimmedTitle.length > 200) {
+      return 'Title must be between 1 and 200 characters';
+    }
+
+    if (trimmedContent.length < 1 || trimmedContent.length > 50000) {
+      return 'Content must be between 1 and 50,000 characters';
+    }
+
+    // Check for suspicious patterns
+    const suspiciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /on\w+\s*=/i,
+      /data:text\/html/i,
+    ];
+
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(trimmedTitle) || pattern.test(trimmedContent)) {
+        return 'Invalid characters detected in input';
+      }
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim()) {
+    // Enhanced validation
+    const validationError = validateInput(title, content);
+    if (validationError) {
       toast({
         title: 'Validation Error',
-        description: 'Please fill in both title and content',
+        description: validationError,
         variant: 'destructive',
       });
       return;
@@ -90,12 +135,15 @@ const WriteStory = () => {
     try {
       setSaving(true);
 
-      // Create the story
+      // Create the story with sanitized input
+      const sanitizedTitle = sanitizeInput(title);
+      const sanitizedContent = sanitizeInput(content);
+      
       const { data: story, error: storyError } = await supabase
         .from('stories')
         .insert({
-          title: title.trim(),
-          content: content.trim(),
+          title: sanitizedTitle,
+          content: sanitizedContent,
           author_id: user.id,
           business_vertical: businessVertical || null,
         })
@@ -171,28 +219,37 @@ const WriteStory = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
+                  <Label htmlFor="title">Title * (max 200 characters)</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter a compelling title for your story..."
+                    maxLength={200}
                     required
+                    className={title.length > 200 ? 'border-destructive' : ''}
                   />
+                  <div className="text-xs text-muted-foreground text-right">
+                    {title.length}/200 characters
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content">Content *</Label>
+                  <Label htmlFor="content">Content * (max 50,000 characters)</Label>
                   <Textarea
                     id="content"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Share your story here... What happened? What did you learn? How can others benefit from your experience?"
-                    className="min-h-[300px] resize-y"
+                    className={`min-h-[300px] resize-y ${content.length > 50000 ? 'border-destructive' : ''}`}
+                    maxLength={50000}
                     required
                   />
-                  <div className="text-xs text-muted-foreground text-right">
-                    {wordCount} words
+                  <div className="text-xs text-muted-foreground text-right space-y-1">
+                    <div>{wordCount} words</div>
+                    <div className={content.length > 45000 ? 'text-destructive' : ''}>
+                      {content.length}/50,000 characters
+                    </div>
                   </div>
                 </div>
               </CardContent>
