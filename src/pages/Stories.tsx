@@ -73,11 +73,19 @@ const Stories = () => {
       // Transform stories with profiles and tags
       const storiesWithRelations = await Promise.all(
         (storiesData || []).map(async (story) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, email, department')
-            .eq('user_id', story.author_id)
-            .single();
+          // Try to fetch profile (will fail for unauthenticated users accessing profiles)
+          let profile = null;
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('display_name, email, department')
+              .eq('user_id', story.author_id)
+              .single();
+            profile = profileData;
+          } catch (error) {
+            // Profile fetch failed (likely due to auth requirements), use fallback
+            console.log('Profile fetch failed for story author:', error);
+          }
 
           const { data: storyTags } = await supabase
             .from('story_tags')
