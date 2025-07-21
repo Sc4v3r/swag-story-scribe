@@ -242,15 +242,19 @@ export function AdminUserManagement() {
       
       // Generate a temporary password
       const tempPass = generateTempPassword();
-      setTempPassword(tempPass);
 
-      // Call Supabase admin API to update user password
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: tempPass
+      // Call our edge function to reset the password with admin privileges
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          userId: userId,
+          newPassword: tempPass
+        }
       });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
+      setTempPassword(tempPass);
       toast({
         title: 'Password Reset Successful',
         description: 'Temporary password generated. Make sure to share it securely with the user.',
@@ -260,7 +264,7 @@ export function AdminUserManagement() {
       console.error('Error resetting password:', error);
       toast({
         title: 'Password Reset Failed',
-        description: error.message || 'Failed to reset user password. You may need to use the Supabase dashboard for this operation.',
+        description: error.message || 'Failed to reset user password.',
         variant: 'destructive',
       });
       setTempPassword('');
