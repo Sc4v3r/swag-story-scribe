@@ -48,7 +48,6 @@ const Stories = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
-  const [selectedVertical, setSelectedVertical] = useState<string>('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
 
   useEffect(() => {
@@ -59,7 +58,7 @@ const Stories = () => {
 
   useEffect(() => {
     filterAndSortStories();
-  }, [stories, searchTerm, selectedTag, selectedVertical, sortBy]);
+  }, [stories, searchTerm, selectedTag, sortBy]);
 
   const fetchStories = async () => {
     try {
@@ -180,13 +179,6 @@ const Stories = () => {
       );
     }
 
-    // Filter by business vertical
-    if (selectedVertical && selectedVertical !== 'all') {
-      filtered = filtered.filter(story =>
-        story.business_vertical === selectedVertical
-      );
-    }
-
     // Sort stories
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -231,22 +223,6 @@ const Stories = () => {
     }
   };
 
-  const getPredefinedVerticals = () => {
-    return [
-      'Financial Services',
-      'Healthcare',
-      'Government',
-      'Manufacturing',
-      'Technology',
-      'Retail',
-      'Education',
-      'Energy & Utilities',
-      'Professional Services',
-      'Telecommunications',
-      'Insurance',
-      'Transportation'
-    ];
-  };
 
   console.log('Render state - loading:', loading, 'error:', error, 'stories count:', stories.length);
 
@@ -337,19 +313,6 @@ const Stories = () => {
             </SelectContent>
           </Select>
 
-          <Select value={selectedVertical} onValueChange={setSelectedVertical}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by vertical" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All verticals</SelectItem>
-              {getPredefinedVerticals().map((vertical) => (
-                <SelectItem key={vertical} value={vertical}>
-                  {vertical}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Select value={sortBy} onValueChange={(value: 'newest' | 'oldest' | 'title') => setSortBy(value)}>
             <SelectTrigger className="w-32">
@@ -365,7 +328,7 @@ const Stories = () => {
       </div>
 
       {/* Active Filters */}
-      {(selectedTag && selectedTag !== 'all' || selectedVertical && selectedVertical !== 'all' || searchTerm) && (
+      {(selectedTag && selectedTag !== 'all' || searchTerm) && (
         <div className="flex gap-2 items-center">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {searchTerm && (
@@ -390,24 +353,12 @@ const Stories = () => {
               </button>
             </Badge>
           )}
-          {selectedVertical && selectedVertical !== 'all' && (
-            <Badge variant="secondary" className="gap-1">
-              Vertical: {selectedVertical}
-              <button 
-                onClick={() => setSelectedVertical('all')}
-                className="ml-1 hover:bg-muted-foreground/20 rounded-full"
-              >
-                ×
-              </button>
-            </Badge>
-          )}
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => {
               setSearchTerm('');
               setSelectedTag('all');
-              setSelectedVertical('all');
             }}
           >
             Clear all
