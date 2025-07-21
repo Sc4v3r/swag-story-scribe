@@ -160,11 +160,7 @@ const Stories = () => {
         return;
       }
       
-      // Filter to only include cybersecurity tags (exclude business vertical tags)
-      const cybersecurityTags = ['External Pentest', 'Internal Pentest', 'Phishing', 'Domain Admin', 'OT', 'Wireless', 'Web App', 'PII data', 'PHI data', 'Stolen Laptop'];
-      const filteredTags = (data || []).filter(tag => cybersecurityTags.includes(tag.name));
-      
-      setTags(filteredTags);
+      setTags(data || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
