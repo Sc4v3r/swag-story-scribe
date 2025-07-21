@@ -19,8 +19,12 @@ interface TagData {
 }
 
 interface BusinessVertical {
-  value: string;
-  count: number;
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  story_count?: number;
 }
 
 export function TagsAndVerticalManagement() {
@@ -31,8 +35,10 @@ export function TagsAndVerticalManagement() {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
   const [newVerticalName, setNewVerticalName] = useState('');
+  const [newVerticalDescription, setNewVerticalDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingTag, setEditingTag] = useState<TagData | null>(null);
+  const [editingVertical, setEditingVertical] = useState<BusinessVertical | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
@@ -65,27 +71,36 @@ export function TagsAndVerticalManagement() {
 
   const fetchBusinessVerticals = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: verticals, error: verticalsError } = await supabase
+        .from('business_verticals')
+        .select('*')
+        .order('name');
+
+      if (verticalsError) throw verticalsError;
+
+      // Get story counts for each vertical
+      const { data: storyCounts, error: storyError } = await supabase
         .from('stories')
         .select('business_vertical')
         .not('business_vertical', 'is', null);
 
-      if (error) throw error;
-      
-      // Count occurrences of each business vertical
-      const verticalCounts: { [key: string]: number } = {};
-      data?.forEach((story) => {
+      if (storyError) throw storyError;
+
+      // Count stories per vertical
+      const counts: { [key: string]: number } = {};
+      storyCounts?.forEach((story) => {
         if (story.business_vertical) {
-          verticalCounts[story.business_vertical] = (verticalCounts[story.business_vertical] || 0) + 1;
+          counts[story.business_vertical] = (counts[story.business_vertical] || 0) + 1;
         }
       });
 
-      const verticals = Object.entries(verticalCounts).map(([value, count]) => ({
-        value,
-        count
-      }));
+      // Combine verticals with their story counts
+      const verticalsWithCounts = verticals?.map((vertical) => ({
+        ...vertical,
+        story_count: counts[vertical.name] || 0
+      })) || [];
 
-      setBusinessVerticals(verticals);
+      setBusinessVerticals(verticalsWithCounts);
     } catch (error: any) {
       console.error('Error fetching business verticals:', error);
       toast({
@@ -190,14 +205,61 @@ export function TagsAndVerticalManagement() {
     }
   };
 
-  const updateBusinessVertical = async (oldValue: string, newValue: string) => {
+  const createBusinessVertical = async () => {
+    if (!newVerticalName.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a business vertical name',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
+        .from('business_verticals')
+        .insert([{
+          name: newVerticalName.trim(),
+          description: newVerticalDescription.trim() || null
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Business vertical created successfully',
+      });
+
+      setNewVerticalName('');
+      setNewVerticalDescription('');
+      fetchBusinessVerticals();
+    } catch (error: any) {
+      console.error('Error creating business vertical:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create business vertical',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updateBusinessVertical = async (oldValue: string, newValue: string) => {
+    try {
+      // Update in business_verticals table
+      const { error: verticalError } = await supabase
+        .from('business_verticals')
+        .update({ name: newValue.trim() })
+        .eq('name', oldValue);
+
+      if (verticalError) throw verticalError;
+
+      // Update in stories table
+      const { error: storyError } = await supabase
         .from('stories')
         .update({ business_vertical: newValue.trim() })
         .eq('business_vertical', oldValue);
 
-      if (error) throw error;
+      if (storyError) throw storyError;
 
       toast({
         title: 'Success',
@@ -210,6 +272,62 @@ export function TagsAndVerticalManagement() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to update business vertical',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updateVerticalInline = async () => {
+    if (!editingVertical || !editingVertical.name.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('business_verticals')
+        .update({
+          name: editingVertical.name.trim(),
+          description: editingVertical.description?.trim() || null
+        })
+        .eq('id', editingVertical.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Business vertical updated successfully',
+      });
+
+      setEditingVertical(null);
+      fetchBusinessVerticals();
+    } catch (error: any) {
+      console.error('Error updating business vertical:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update business vertical',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteBusinessVertical = async (verticalId: string) => {
+    try {
+      const { error } = await supabase
+        .from('business_verticals')
+        .delete()
+        .eq('id', verticalId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Business vertical deleted successfully',
+      });
+
+      fetchBusinessVerticals();
+    } catch (error: any) {
+      console.error('Error deleting business vertical:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete business vertical',
         variant: 'destructive',
       });
     }
@@ -397,6 +515,42 @@ export function TagsAndVerticalManagement() {
         </TabsContent>
 
         <TabsContent value="verticals" className="space-y-6">
+          {/* Create New Business Vertical */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Create New Business Vertical
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vertical-name">Vertical Name</Label>
+                  <Input
+                    id="vertical-name"
+                    value={newVerticalName}
+                    onChange={(e) => setNewVerticalName(e.target.value)}
+                    placeholder="Enter business vertical name..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vertical-description">Description (Optional)</Label>
+                  <Input
+                    id="vertical-description"
+                    value={newVerticalDescription}
+                    onChange={(e) => setNewVerticalDescription(e.target.value)}
+                    placeholder="Enter description..."
+                  />
+                </div>
+              </div>
+              <Button onClick={createBusinessVertical} disabled={!newVerticalName.trim()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Business Vertical
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -407,40 +561,93 @@ export function TagsAndVerticalManagement() {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Manage business verticals used across stories. You can rename existing verticals 
+                  Manage business verticals used across stories. You can edit existing verticals 
                   and all stories assigned to that vertical will be updated automatically.
                 </p>
                 
                 <div className="space-y-2">
                   {businessVerticals.map((vertical) => (
-                    <div key={vertical.value} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">
-                          {vertical.value}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {vertical.count} stor{vertical.count !== 1 ? 'ies' : 'y'}
-                        </span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const newValue = prompt('Enter new name for this business vertical:', vertical.value);
-                          if (newValue && newValue.trim() !== vertical.value) {
-                            updateBusinessVertical(vertical.value, newValue.trim());
-                          }
-                        }}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Rename
-                      </Button>
+                    <div key={vertical.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      {editingVertical?.id === vertical.id ? (
+                        <div className="flex items-center gap-4 flex-1">
+                          <Input
+                            value={editingVertical.name}
+                            onChange={(e) => setEditingVertical({ ...editingVertical, name: e.target.value })}
+                            className="flex-1"
+                            placeholder="Vertical name"
+                          />
+                          <Input
+                            value={editingVertical.description || ''}
+                            onChange={(e) => setEditingVertical({ ...editingVertical, description: e.target.value })}
+                            className="flex-1"
+                            placeholder="Description (optional)"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={updateVerticalInline}>Save</Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingVertical(null)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline">
+                              {vertical.name}
+                            </Badge>
+                            {vertical.description && (
+                              <span className="text-sm text-muted-foreground italic">
+                                {vertical.description}
+                              </span>
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {vertical.story_count} stor{vertical.story_count !== 1 ? 'ies' : 'y'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingVertical(vertical)}
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive">
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Business Vertical</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete the business vertical "{vertical.name}"? 
+                                    This action cannot be undone. Stories using this vertical will have their business vertical cleared.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteBusinessVertical(vertical.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete Vertical
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                   
                   {businessVerticals.length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
-                      No business verticals found. Business verticals are set when creating stories.
+                      No business verticals found. Create your first business vertical above.
                     </div>
                   )}
                 </div>
