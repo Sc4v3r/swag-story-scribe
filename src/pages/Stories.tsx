@@ -45,12 +45,14 @@ const Stories = () => {
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [selectedVertical, setSelectedVertical] = useState<string>('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
 
   useEffect(() => {
+    console.log('Stories component mounted');
     fetchStories();
     fetchTags();
   }, []);
@@ -61,36 +63,63 @@ const Stories = () => {
 
   const fetchStories = async () => {
     try {
+      console.log('Fetching stories...');
       setLoading(true);
+      setError(null);
 
-      const { data: storiesData, error } = await supabase
+      const { data: storiesData, error: storiesError } = await supabase
         .from('stories')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Stories data:', storiesData);
+      console.log('Stories error:', storiesError);
+
+      if (storiesError) {
+        console.error('Error fetching stories:', storiesError);
+        setError(storiesError.message);
+        return;
+      }
+
+      if (!storiesData || storiesData.length === 0) {
+        console.log('No stories found in database');
+        setStories([]);
+        setLoading(false);
+        return;
+      }
 
       // Transform stories with profiles and tags
       const storiesWithRelations = await Promise.all(
-        (storiesData || []).map(async (story) => {
-          // Try to fetch profile (will fail for unauthenticated users accessing profiles)
+        storiesData.map(async (story) => {
+          console.log('Processing story:', story.id);
+          
+          // Try to fetch profile (may fail for unauthenticated users)
           let profile = null;
           try {
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('display_name, email, department')
               .eq('user_id', story.author_id)
               .single();
-            profile = profileData;
+            
+            if (profileError) {
+              console.log('Profile fetch error for story', story.id, ':', profileError);
+            } else {
+              profile = profileData;
+            }
           } catch (error) {
-            // Profile fetch failed (likely due to auth requirements), use fallback
             console.log('Profile fetch failed for story author:', error);
           }
 
-          const { data: storyTags } = await supabase
+          // Fetch story tags
+          const { data: storyTags, error: tagsError } = await supabase
             .from('story_tags')
             .select('tags(id, name, color)')
             .eq('story_id', story.id);
+
+          if (tagsError) {
+            console.log('Tags fetch error for story', story.id, ':', tagsError);
+          }
 
           return {
             ...story,
@@ -100,8 +129,11 @@ const Stories = () => {
         })
       );
 
+      console.log('Final stories with relations:', storiesWithRelations);
       setStories(storiesWithRelations);
     } catch (error: any) {
+      console.error('Unexpected error in fetchStories:', error);
+      setError(error.message || 'Failed to load stories');
       toast({
         title: 'Error',
         description: 'Failed to load stories',
@@ -119,7 +151,10 @@ const Stories = () => {
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching tags:', error);
+        return;
+      }
       setTags(data || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -204,16 +239,35 @@ const Stories = () => {
     return verticals as string[];
   };
 
+  console.log('Render state - loading:', loading, 'error:', error, 'stories count:', stories.length);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading stories...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Stories</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={fetchStories}>Try Again</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -384,7 +438,7 @@ const Stories = () => {
               </>
             )}
           </div>
-          {stories.length === 0 && (
+          {stories.length === 0 && user && (
             <Button asChild>
               <Link to="/write">
                 <Plus className="mr-2 h-4 w-4" />
