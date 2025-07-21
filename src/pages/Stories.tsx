@@ -249,17 +249,17 @@ const Stories = () => {
 
   const getPredefinedVerticals = () => {
     return [
-      'Financial Services',
-      'Healthcare',
-      'Government',
-      'Manufacturing',
-      'Technology',
-      'Retail',
       'Education',
       'Energy & Utilities',
-      'Professional Services',
-      'Telecommunications',
+      'Financial Services',
+      'Government',
+      'Healthcare',
       'Insurance',
+      'Manufacturing',
+      'Professional Services',
+      'Retail',
+      'Technology',
+      'Telecommunications',
       'Transportation'
     ];
   };
