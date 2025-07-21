@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Stories from "./pages/Stories";
+import MyStories from "./pages/MyStories";
 import StoryDetail from "./pages/StoryDetail";
 import WriteStory from "./pages/WriteStory";
 import AdminPanel from "./pages/AdminPanel";
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/stories" element={
               <ProtectedRoute>
                 <Stories />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-stories" element={
+              <ProtectedRoute>
+                <MyStories />
               </ProtectedRoute>
             } />
             <Route path="/stories/:id" element={<StoryDetail />} />

@@ -6,7 +6,8 @@ import {
   Users, 
   Settings, 
   Building2,
-  Home
+  Home,
+  BookOpen
 } from 'lucide-react';
 import {
   Sidebar,
@@ -24,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 const navigationItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'All Stories', url: '/stories', icon: FileText },
+  { title: 'My Stories', url: '/my-stories', icon: BookOpen },
   { title: 'Write Story', url: '/write', icon: Plus },
 ];
 
