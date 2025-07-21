@@ -160,7 +160,11 @@ const Stories = () => {
         return;
       }
       
-      setTags(data || []);
+      // Exclude business verticals from tags (they're a separate field)
+      const businessVerticals = getPredefinedVerticals();
+      const filteredTags = (data || []).filter(tag => !businessVerticals.includes(tag.name));
+      
+      setTags(filteredTags);
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
