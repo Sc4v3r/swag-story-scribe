@@ -128,7 +128,7 @@ const StoryDetail = () => {
             The story you're looking for could not be found.
           </p>
           <Button asChild>
-            <Link to="/stories">
+            <Link to="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Stories
             </Link>
@@ -145,7 +145,7 @@ const StoryDetail = () => {
       {/* Back button */}
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link to="/stories">
+          <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Stories
           </Link>
