@@ -92,6 +92,7 @@ export type Database = {
           business_vertical: string | null
           content: string
           created_at: string
+          diagram_url: string | null
           id: string
           title: string
           updated_at: string
@@ -101,6 +102,7 @@ export type Database = {
           business_vertical?: string | null
           content: string
           created_at?: string
+          diagram_url?: string | null
           id?: string
           title: string
           updated_at?: string
@@ -110,6 +112,7 @@ export type Database = {
           business_vertical?: string | null
           content?: string
           created_at?: string
+          diagram_url?: string | null
           id?: string
           title?: string
           updated_at?: string

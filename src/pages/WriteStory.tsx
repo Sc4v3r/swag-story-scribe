@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { KillChainDiagramEditor } from '@/components/diagrams/KillChainDiagramEditor';
+import { DiagramGenerator } from '@/components/diagrams/DiagramGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Save, ArrowLeft, Tag } from 'lucide-react';
 
 interface Tag {
   id: string;
@@ -23,106 +24,99 @@ const WriteStory = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [businessVertical, setBusinessVertical] = useState('');
-  const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [diagramUrl, setDiagramUrl] = useState<string>('');
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const businessVerticals = [
-    'Technology',
-    'Marketing',
-    'Finance',
-    'Operations', 
-    'HR',
-    'Strategy',
-    'Sales',
-    'Product',
-    'Customer Success',
-    'Other'
-  ];
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchTags();
-  }, []);
+    if (editId) {
+      fetchStoryForEdit();
+    }
+  }, [editId]);
 
   const fetchTags = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('tags')
         .select('*')
         .order('name');
 
       if (error) throw error;
-      setTags(data || []);
+
+      // Filter to only include cybersecurity tags (exclude business vertical tags)
+      const cybersecurityTags = ['External Pentest', 'Internal Pentest', 'Phishing', 'Domain Admin', 'OT', 'Wireless', 'Web App', 'PII data', 'PHI data', 'Stolen Laptop'];
+      const filteredTags = (data || []).filter(tag => cybersecurityTags.includes(tag.name));
+      
+      setTags(filteredTags);
     } catch (error) {
       console.error('Error fetching tags:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Input sanitization function
-  const sanitizeInput = (input: string): string => {
-    return input
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+\s*=/gi, '') // Remove event handlers
-      .trim();
-  };
+  const fetchStoryForEdit = async () => {
+    try {
+      if (editId) {
+        const { data: story, error: storyError } = await supabase
+          .from('stories')
+          .select('*, story_tags(tag_id)')
+          .eq('id', editId)
+          .single();
 
-  // Enhanced validation function
-  const validateInput = (title: string, content: string): string | null => {
-    const trimmedTitle = title.trim();
-    const trimmedContent = content.trim();
+        if (storyError) throw storyError;
 
-    if (!trimmedTitle || !trimmedContent) {
-      return 'Please fill in both title and content';
-    }
-
-    if (trimmedTitle.length < 1 || trimmedTitle.length > 200) {
-      return 'Title must be between 1 and 200 characters';
-    }
-
-    if (trimmedContent.length < 1 || trimmedContent.length > 50000) {
-      return 'Content must be between 1 and 50,000 characters';
-    }
-
-    // Check for suspicious patterns
-    const suspiciousPatterns = [
-      /<script/i,
-      /javascript:/i,
-      /on\w+\s*=/i,
-      /data:text\/html/i,
-    ];
-
-    for (const pattern of suspiciousPatterns) {
-      if (pattern.test(trimmedTitle) || pattern.test(trimmedContent)) {
-        return 'Invalid characters detected in input';
+        setTitle(story.title);
+        setContent(story.content);
+        setBusinessVertical(story.business_vertical || '');
+        setDiagramUrl(story.diagram_url || '');
+        setSelectedTags(story.story_tags.map((st: any) => st.tag_id));
+        setIsEditing(true);
       }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load story for editing',
+        variant: 'destructive',
+      });
     }
+  };
 
-    return null;
+  const getPredefinedVerticals = () => {
+    return [
+      'Financial Services',
+      'Healthcare',
+      'Government',
+      'Manufacturing',
+      'Technology',
+      'Retail',
+      'Education',
+      'Energy & Utilities',
+      'Professional Services',
+      'Telecommunications',
+      'Insurance',
+      'Transportation'
+    ];
+  };
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced validation
-    const validationError = validateInput(title, content);
-    if (validationError) {
-      toast({
-        title: 'Validation Error',
-        description: validationError,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!user) {
       toast({
         title: 'Authentication Error',
@@ -133,29 +127,56 @@ const WriteStory = () => {
     }
 
     try {
-      setSaving(true);
+      setLoading(true);
 
-      // Create the story with sanitized input
-      const sanitizedTitle = sanitizeInput(title);
-      const sanitizedContent = sanitizeInput(content);
+      let storyId;
       
-      const { data: story, error: storyError } = await supabase
-        .from('stories')
-        .insert({
-          title: sanitizedTitle,
-          content: sanitizedContent,
-          author_id: user.id,
-          business_vertical: businessVertical || null,
-        })
-        .select()
-        .single();
+      if (isEditing && editId) {
+        // Update existing story
+        const { error: updateError } = await supabase
+          .from('stories')
+          .update({
+            title,
+            content,
+            business_vertical: businessVertical || null,
+            diagram_url: diagramUrl || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editId);
 
-      if (storyError) throw storyError;
+        if (updateError) throw updateError;
+        storyId = editId;
+      } else {
+        // Create new story
+        const { data, error: insertError } = await supabase
+          .from('stories')
+          .insert({
+            title,
+            content,
+            author_id: user.id,
+            business_vertical: businessVertical || null,
+            diagram_url: diagramUrl || null
+          })
+          .select()
+          .single();
 
-      // Add tags if any selected
+        if (insertError) throw insertError;
+        storyId = data.id;
+      }
+
+      // Handle tags
+      if (isEditing) {
+        // Delete existing tags for this story
+        await supabase
+          .from('story_tags')
+          .delete()
+          .eq('story_id', storyId);
+      }
+
+      // Add new tags
       if (selectedTags.length > 0) {
         const tagInserts = selectedTags.map(tagId => ({
-          story_id: story.id,
+          story_id: storyId,
           tag_id: tagId,
         }));
 
@@ -168,7 +189,7 @@ const WriteStory = () => {
 
       toast({
         title: 'Success!',
-        description: 'Your story has been published successfully.',
+        description: `Story ${isEditing ? 'updated' : 'published'} successfully.`,
       });
 
       navigate('/stories');
@@ -179,202 +200,218 @@ const WriteStory = () => {
         variant: 'destructive',
       });
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const handleTagToggle = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
+  const getStoryTypeFromTags = () => {
+    const tagNames = selectedTags.map(tagId => tags.find(t => t.id === tagId)?.name).filter(Boolean);
+    if (tagNames.includes('Phishing')) return 'phishing';
+    if (tagNames.includes('Web App')) return 'webapp';
+    if (tagNames.includes('Wireless')) return 'wireless';
+    if (tagNames.includes('Stolen Laptop')) return 'stolen_device';
+    return 'generic';
   };
 
-  const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Write a Story</h1>
-          <p className="text-muted-foreground">
-            Share your experiences and insights with your team
-          </p>
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+          <p className="text-muted-foreground">Please sign in to write stories.</p>
         </div>
       </div>
+    );
+  }
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Story Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title * (max 200 characters)</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a compelling title for your story..."
-                    maxLength={200}
-                    required
-                    className={title.length > 200 ? 'border-destructive' : ''}
-                  />
-                  <div className="text-xs text-muted-foreground text-right">
-                    {title.length}/200 characters
-                  </div>
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">
+          {isEditing ? 'Edit Story' : 'Write New Story'}
+        </h1>
+        <p className="text-muted-foreground">
+          Share your penetration testing experiences and insights
+        </p>
+      </div>
+
+      <Tabs defaultValue="content" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="content">Story Content</TabsTrigger>
+          <TabsTrigger value="diagram">Kill Chain Diagram</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content">
+          <Card>
+            <CardHeader>
+              <CardTitle>Story Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter story title..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  placeholder="Share your penetration testing story, methodology, findings, and impact..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={12}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="business-vertical">Business Vertical</Label>
+                <Select value={businessVertical} onValueChange={setBusinessVertical}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business vertical..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getPredefinedVerticals().map((vertical) => (
+                      <SelectItem key={vertical} value={vertical}>
+                        {vertical}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {selectedTags.map((tagId) => {
+                    const tag = tags.find(t => t.id === tagId);
+                    if (!tag) return null;
+                    return (
+                      <Badge 
+                        key={tagId} 
+                        variant="secondary"
+                        className="cursor-pointer"
+                        style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: tag.color }}
+                        onClick={() => toggleTag(tagId)}
+                      >
+                        {tag.name} ×
+                      </Badge>
+                    );
+                  })}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="content">Content * (max 50,000 characters)</Label>
-                  <Textarea
-                    id="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Share your story here... What happened? What did you learn? How can others benefit from your experience?"
-                    className={`min-h-[300px] resize-y ${content.length > 50000 ? 'border-destructive' : ''}`}
-                    maxLength={50000}
-                    required
-                  />
-                  <div className="text-xs text-muted-foreground text-right space-y-1">
-                    <div>{wordCount} words</div>
-                    <div className={content.length > 45000 ? 'text-destructive' : ''}>
-                      {content.length}/50,000 characters
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Publishing */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Publish</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button type="submit" className="w-full" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2" />
-                      Publishing...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Publish Story
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Categorization */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Categorization</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vertical">Business Vertical</Label>
-                  <Select value={businessVertical} onValueChange={setBusinessVertical}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a vertical (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {businessVerticals.map((vertical) => (
-                        <SelectItem key={vertical} value={vertical}>
-                          {vertical}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tags */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-sm text-muted-foreground">Loading tags...</div>
-                ) : (
-                  <div className="space-y-3">
-                    {tags.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">
-                        No tags available
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {tags.map((tag) => (
-                          <div key={tag.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`tag-${tag.id}`}
-                              checked={selectedTags.includes(tag.id)}
-                              onCheckedChange={() => handleTagToggle(tag.id)}
-                            />
-                            <Label 
-                              htmlFor={`tag-${tag.id}`}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: tag.color }}
-                              />
-                              {tag.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {selectedTags.length > 0 && (
-                      <div className="pt-3 border-t">
-                        <div className="text-sm font-medium mb-2">Selected tags:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedTags.map((tagId) => {
-                            const tag = tags.find(t => t.id === tagId);
-                            return tag ? (
-                              <Badge 
-                                key={tag.id} 
-                                variant="secondary"
-                                style={{ 
-                                  backgroundColor: `${tag.color}20`, 
-                                  color: tag.color, 
-                                  borderColor: tag.color 
-                                }}
-                              >
-                                {tag.name}
-                              </Badge>
-                            ) : null;
-                          })}
+                <Select onValueChange={toggleTag}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Add tags..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tags.filter(tag => !selectedTags.includes(tag.id)).map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {tag.name}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="diagram">
+          <div className="space-y-6">
+            <KillChainDiagramEditor 
+              storyType={getStoryTypeFromTags()}
+              onDiagramSave={(diagramData) => setDiagramUrl(diagramData)}
+            />
+            
+            <DiagramGenerator 
+              storyContent={content}
+              storyTags={selectedTags.map(tagId => tags.find(t => t.id === tagId)?.name).filter(Boolean) as string[]}
+              onDiagramGenerated={(url) => setDiagramUrl(url)}
+            />
           </div>
-        </div>
-      </form>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <Card>
+            <CardHeader>
+              <CardTitle>Story Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">{title || 'Untitled Story'}</h2>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>By {user?.email}</span>
+                  {businessVertical && <Badge variant="outline">{businessVertical}</Badge>}
+                </div>
+              </div>
+
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedTags.map((tagId) => {
+                    const tag = tags.find(t => t.id === tagId);
+                    if (!tag) return null;
+                    return (
+                      <Badge 
+                        key={tagId} 
+                        variant="secondary"
+                        style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: tag.color }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+
+              {diagramUrl && (
+                <div>
+                  <h3 className="font-semibold mb-2">Kill Chain Diagram</h3>
+                  <div className="border rounded-lg overflow-hidden bg-gray-50 p-4">
+                    <img 
+                      src={diagramUrl} 
+                      alt="Kill Chain Diagram" 
+                      className="w-full h-auto max-w-2xl mx-auto rounded"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="prose max-w-none">
+                <div className="whitespace-pre-wrap">
+                  {content || 'No content yet...'}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-8 flex gap-4">
+        <Button onClick={handleSubmit} disabled={loading || !title || !content}>
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              {isEditing ? 'Updating...' : 'Publishing...'}
+            </>
+          ) : (
+            isEditing ? 'Update Story' : 'Publish Story'
+          )}
+        </Button>
+        <Button variant="outline" onClick={() => navigate('/stories')}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 };

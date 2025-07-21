@@ -15,6 +15,7 @@ interface Story {
   content: string;
   author_id: string;
   business_vertical: string | null;
+  diagram_url: string | null;
   created_at: string;
   updated_at: string;
   profiles: {
@@ -204,6 +205,28 @@ const StoryDetail = () => {
         </CardHeader>
 
         <CardContent>
+          {/* Kill Chain Diagram */}
+          {story.diagram_url && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Kill Chain Diagram
+              </h2>
+              <div className="border rounded-lg overflow-hidden bg-gray-50 p-4">
+                <img 
+                  src={story.diagram_url} 
+                  alt="Kill Chain Diagram" 
+                  className="w-full h-auto max-w-4xl mx-auto rounded shadow-sm"
+                />
+                <p className="text-sm text-muted-foreground mt-2 text-center">
+                  Visual representation of the attack methodology and kill chain used in this penetration test
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="prose prose-lg max-w-none">
             <div className="whitespace-pre-wrap text-foreground leading-relaxed">
               {story.content}
