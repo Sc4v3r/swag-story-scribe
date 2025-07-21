@@ -32,6 +32,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ data: any, error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -235,6 +236,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user?.email) throw new Error('User email not found');
+
+    try {
+      // First verify the current password by attempting to sign in
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (verifyError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Update the password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been changed successfully.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Password Change Error',
+        description: error.message || 'Failed to change password',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -248,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         updateProfile,
+        changePassword,
       }}
     >
       {children}

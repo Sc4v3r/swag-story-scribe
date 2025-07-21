@@ -11,6 +11,7 @@ import StoryDetail from "./pages/StoryDetail";
 import WriteStory from "./pages/WriteStory";
 import AdminPanel from "./pages/AdminPanel";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,11 @@ const App = () => (
             <Route path="/write" element={
               <ProtectedRoute>
                 <WriteStory />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
