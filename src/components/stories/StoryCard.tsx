@@ -30,6 +30,7 @@ interface Story {
   content: string;
   author_id: string;
   business_vertical: string | null;
+  geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
   updated_at: string;
@@ -154,6 +155,11 @@ export function StoryCard({ story, onEdit, onDelete, showActions = true }: Story
               {story.business_vertical && (
                 <Badge variant="outline" className="text-xs">
                   {story.business_vertical}
+                </Badge>
+              )}
+              {story.geolocation && (
+                <Badge variant="outline" className="text-xs">
+                  {story.geolocation}
                 </Badge>
               )}
             </div>

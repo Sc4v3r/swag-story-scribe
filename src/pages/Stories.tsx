@@ -16,6 +16,7 @@ interface Story {
   content: string;
   author_id: string;
   business_vertical: string | null;
+  geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
   updated_at: string;
@@ -50,6 +51,7 @@ const Stories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [selectedVertical, setSelectedVertical] = useState<string>('');
+  const [selectedGeolocation, setSelectedGeolocation] = useState<string>('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
 
   useEffect(() => {
@@ -60,7 +62,7 @@ const Stories = () => {
 
   useEffect(() => {
     filterAndSortStories();
-  }, [stories, searchTerm, selectedTag, selectedVertical, sortBy]);
+  }, [stories, searchTerm, selectedTag, selectedVertical, selectedGeolocation, sortBy]);
 
   const fetchStories = async () => {
     try {
@@ -191,6 +193,13 @@ const Stories = () => {
     if (selectedVertical && selectedVertical !== 'all') {
       filtered = filtered.filter(story =>
         story.business_vertical === selectedVertical
+      );
+    }
+
+    // Filter by geolocation
+    if (selectedGeolocation && selectedGeolocation !== 'all') {
+      filtered = filtered.filter(story =>
+        story.geolocation === selectedGeolocation
       );
     }
 
@@ -358,6 +367,18 @@ const Stories = () => {
             </SelectContent>
           </Select>
 
+          <Select value={selectedGeolocation} onValueChange={setSelectedGeolocation}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Region" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All regions</SelectItem>
+              <SelectItem value="AMER">AMER</SelectItem>
+              <SelectItem value="EMEA">EMEA</SelectItem>
+              <SelectItem value="APAC">APAC</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={sortBy} onValueChange={(value: 'newest' | 'oldest' | 'title') => setSortBy(value)}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Sort by" />
@@ -372,7 +393,7 @@ const Stories = () => {
       </div>
 
       {/* Active Filters */}
-      {(selectedTag && selectedTag !== 'all' || selectedVertical && selectedVertical !== 'all' || searchTerm) && (
+      {(selectedTag && selectedTag !== 'all' || selectedVertical && selectedVertical !== 'all' || selectedGeolocation && selectedGeolocation !== 'all' || searchTerm) && (
         <div className="flex gap-2 items-center">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {searchTerm && (
@@ -408,6 +429,17 @@ const Stories = () => {
               </button>
             </Badge>
           )}
+          {selectedGeolocation && selectedGeolocation !== 'all' && (
+            <Badge variant="secondary" className="gap-1">
+              Region: {selectedGeolocation}
+              <button 
+                onClick={() => setSelectedGeolocation('all')}
+                className="ml-1 hover:bg-muted-foreground/20 rounded-full"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -415,6 +447,7 @@ const Stories = () => {
               setSearchTerm('');
               setSelectedTag('all');
               setSelectedVertical('all');
+              setSelectedGeolocation('all');
             }}
           >
             Clear all

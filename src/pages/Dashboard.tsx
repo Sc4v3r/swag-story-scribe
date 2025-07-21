@@ -14,6 +14,7 @@ interface Story {
   content: string;
   author_id: string;
   business_vertical: string | null;
+  geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
   updated_at: string;

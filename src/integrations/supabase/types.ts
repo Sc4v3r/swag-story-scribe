@@ -93,6 +93,7 @@ export type Database = {
           content: string
           created_at: string
           diagram_url: string | null
+          geolocation: string | null
           id: string
           title: string
           updated_at: string
@@ -103,6 +104,7 @@ export type Database = {
           content: string
           created_at?: string
           diagram_url?: string | null
+          geolocation?: string | null
           id?: string
           title: string
           updated_at?: string
@@ -113,6 +115,7 @@ export type Database = {
           content?: string
           created_at?: string
           diagram_url?: string | null
+          geolocation?: string | null
           id?: string
           title?: string
           updated_at?: string

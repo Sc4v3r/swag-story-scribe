@@ -30,6 +30,7 @@ const WriteStory = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [businessVertical, setBusinessVertical] = useState('');
+  const [geolocation, setGeolocation] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [diagramUrl, setDiagramUrl] = useState<string>('');
   const [tags, setTags] = useState<Tag[]>([]);
@@ -76,6 +77,7 @@ const WriteStory = () => {
         setTitle(story.title);
         setContent(story.content);
         setBusinessVertical(story.business_vertical || '');
+        setGeolocation(story.geolocation || '');
         setDiagramUrl(story.diagram_url || '');
         setSelectedTags(story.story_tags.map((st: any) => st.tag_id));
         setIsEditing(true);
@@ -139,6 +141,7 @@ const WriteStory = () => {
             title,
             content,
             business_vertical: businessVertical || null,
+            geolocation: geolocation || null,
             diagram_url: diagramUrl || null,
             updated_at: new Date().toISOString()
           })
@@ -155,6 +158,7 @@ const WriteStory = () => {
             content,
             author_id: user.id,
             business_vertical: businessVertical || null,
+            geolocation: geolocation || null,
             diagram_url: diagramUrl || null
           })
           .select()
@@ -286,6 +290,20 @@ const WriteStory = () => {
               </div>
 
               <div>
+                <Label htmlFor="geolocation">Region</Label>
+                <Select value={geolocation} onValueChange={setGeolocation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select region..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AMER">AMER (Americas)</SelectItem>
+                    <SelectItem value="EMEA">EMEA (Europe, Middle East, Africa)</SelectItem>
+                    <SelectItem value="APAC">APAC (Asia-Pacific)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {selectedTags.map((tagId) => {
@@ -353,6 +371,7 @@ const WriteStory = () => {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>By {user?.email}</span>
                   {businessVertical && <Badge variant="outline">{businessVertical}</Badge>}
+                  {geolocation && <Badge variant="outline">{geolocation}</Badge>}
                 </div>
               </div>
 
