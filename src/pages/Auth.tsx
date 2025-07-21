@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, FileText, Users, Mail, Lock, User } from 'lucide-react';
+import { Building2, FileText, Users, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -46,8 +46,9 @@ const Auth = () => {
           <p className="text-muted-foreground">
             Share and discover organizational stories
           </p>
-          <Button variant="outline" onClick={() => navigate('/stories')} className="mt-4">
-            Browse Stories
+          <Button variant="outline" onClick={() => navigate('/')} className="mt-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Stories
           </Button>
         </div>
 
