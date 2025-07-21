@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, UserPlus, AlertTriangle } from 'lucide-react';
+import { Shield, UserPlus, AlertTriangle, UserX, Ban, Trash2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -16,6 +17,7 @@ interface Profile {
   email: string | null;
   department: string | null;
   business_vertical: string | null;
+  status: 'active' | 'blocked' | 'deleted';
 }
 
 interface UserWithRole extends Profile {
@@ -55,11 +57,12 @@ export function AdminUserManagement() {
       if (rolesError) throw rolesError;
 
       // Combine the data manually
-      const usersWithRoles = profiles?.map((profile) => {
+      const usersWithRoles: UserWithRole[] = profiles?.map((profile) => {
         const userRole = roles?.find(role => role.user_id === profile.user_id);
         return {
           ...profile,
-          role: userRole?.role || 'user'
+          role: (userRole?.role || 'user') as 'admin' | 'user',
+          status: (profile.status || 'active') as 'active' | 'blocked' | 'deleted'
         };
       }) || [];
 
@@ -145,6 +148,81 @@ export function AdminUserManagement() {
     setNewAdminEmail('');
   };
 
+  const blockUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'blocked' })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User has been blocked',
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to block user',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const unblockUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'active' })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User has been unblocked',
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to unblock user',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'deleted' })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User has been deleted',
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete user',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -225,14 +303,21 @@ export function AdminUserManagement() {
             </div>
           ) : (
             <div className="space-y-2">
-              {users.map((user) => (
+              {users.filter(user => user.status !== 'deleted').map((user) => (
                 <div 
                   key={user.id} 
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className={`flex items-center justify-between p-3 border rounded-lg ${
+                    user.status === 'blocked' ? 'bg-red-50 border-red-200' : ''
+                  }`}
                 >
                   <div className="flex-1">
                     <div className="font-medium">
                       {user.display_name || 'No name'}
+                      {user.status === 'blocked' && (
+                        <Badge variant="destructive" className="ml-2 text-xs">
+                          Blocked
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {user.email}
@@ -247,7 +332,8 @@ export function AdminUserManagement() {
                     <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                       {user.role}
                     </Badge>
-                    {user.role === 'user' && (
+                    
+                    {user.status === 'active' && user.role === 'user' && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -258,6 +344,58 @@ export function AdminUserManagement() {
                         Make Admin
                       </Button>
                     )}
+                    
+                    {user.status === 'active' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => blockUser(user.user_id)}
+                      >
+                        <Ban className="h-3 w-3 mr-1" />
+                        Block
+                      </Button>
+                    )}
+                    
+                    {user.status === 'blocked' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => unblockUser(user.user_id)}
+                      >
+                        <UserX className="h-3 w-3 mr-1" />
+                        Unblock
+                      </Button>
+                    )}
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this user? This action cannot be undone.
+                            The user will be marked as deleted and will lose access to the system.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteUser(user.user_id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete User
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
