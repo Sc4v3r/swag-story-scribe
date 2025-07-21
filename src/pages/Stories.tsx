@@ -155,7 +155,12 @@ const Stories = () => {
         console.error('Error fetching tags:', error);
         return;
       }
-      setTags(data || []);
+      
+      // Filter to only include cybersecurity tags (exclude business vertical tags)
+      const cybersecurityTags = ['External Pentest', 'Internal Pentest', 'Red Team', 'Blue Team', 'Purple Team', 'Vulnerability Assessment', 'Compliance Audit', 'Security Training'];
+      const filteredTags = (data || []).filter(tag => cybersecurityTags.includes(tag.name));
+      
+      setTags(filteredTags);
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
