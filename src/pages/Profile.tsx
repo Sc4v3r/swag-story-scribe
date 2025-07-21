@@ -17,8 +17,6 @@ const Profile = () => {
 
   // Profile form state
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
-  const [department, setDepartment] = useState(profile?.department || '');
-  const [businessVertical, setBusinessVertical] = useState(profile?.business_vertical || '');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Password change state
@@ -37,8 +35,6 @@ const Profile = () => {
     try {
       await updateProfile({
         display_name: displayName,
-        department: department || null,
-        business_vertical: businessVertical || null,
       });
     } catch (error) {
       // Error handling is done in the useAuth hook
@@ -146,28 +142,6 @@ const Profile = () => {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Enter your display name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      type="text"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      placeholder="Enter your department"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="businessVertical">Business Vertical</Label>
-                    <Input
-                      id="businessVertical"
-                      type="text"
-                      value={businessVertical}
-                      onChange={(e) => setBusinessVertical(e.target.value)}
-                      placeholder="Enter your business vertical"
                     />
                   </div>
                 </div>
