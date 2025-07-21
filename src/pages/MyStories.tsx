@@ -15,7 +15,7 @@ interface Story {
   title: string;
   content: string;
   author_id: string;
-  business_vertical: string | null;
+  business_vertical_id: string | null;
   geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
@@ -32,6 +32,11 @@ interface Story {
       color: string;
     };
   }>;
+  business_verticals?: {
+    id: string;
+    name: string;
+    description?: string;
+  } | null;
 }
 
 interface Tag {
@@ -40,12 +45,19 @@ interface Tag {
   color: string;
 }
 
+interface BusinessVertical {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 const MyStories = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stories, setStories] = useState<Story[]>([]);
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [businessVerticals, setBusinessVerticals] = useState<BusinessVertical[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +70,7 @@ const MyStories = () => {
     if (user) {
       fetchMyStories();
       fetchTags();
+      fetchBusinessVerticals();
     }
   }, [user]);
 
@@ -74,7 +87,7 @@ const MyStories = () => {
 
       const { data: storiesData, error: storiesError } = await supabase
         .from('stories')
-        .select('*')
+        .select('*, business_verticals(id, name, description)')
         .eq('author_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -146,6 +159,24 @@ const MyStories = () => {
     }
   };
 
+  const fetchBusinessVerticals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('business_verticals')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching business verticals:', error);
+        return;
+      }
+      
+      setBusinessVerticals(data || []);
+    } catch (error) {
+      console.error('Error fetching business verticals:', error);
+    }
+  };
+
   const filterAndSortStories = () => {
     let filtered = [...stories];
 
@@ -167,7 +198,7 @@ const MyStories = () => {
     // Filter by business vertical
     if (selectedVertical && selectedVertical !== 'all') {
       filtered = filtered.filter(story =>
-        story.business_vertical === selectedVertical
+        story.business_vertical_id === selectedVertical
       );
     }
 
@@ -195,22 +226,7 @@ const MyStories = () => {
     setFilteredStories(filtered);
   };
 
-  const getPredefinedVerticals = () => {
-    return [
-      'Education',
-      'Energy & Utilities',
-      'Financial Services',
-      'Government',
-      'Healthcare',
-      'Insurance',
-      'Manufacturing',
-      'Professional Services',
-      'Retail',
-      'Technology',
-      'Telecommunications',
-      'Transportation'
-    ];
-  };
+  // Remove the old getPredefinedVerticals function since we now fetch from database
 
   if (loading) {
     return (
@@ -311,9 +327,9 @@ const MyStories = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All verticals</SelectItem>
-                  {getPredefinedVerticals().map((vertical) => (
-                    <SelectItem key={vertical} value={vertical}>
-                      {vertical}
+                  {businessVerticals.map((vertical) => (
+                    <SelectItem key={vertical.id} value={vertical.id}>
+                      {vertical.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -370,17 +386,17 @@ const MyStories = () => {
                   </button>
                 </Badge>
               )}
-              {selectedVertical && selectedVertical !== 'all' && (
-                <Badge variant="secondary" className="gap-1">
-                  Vertical: {selectedVertical}
-                  <button 
-                    onClick={() => setSelectedVertical('all')}
-                    className="ml-1 hover:bg-muted-foreground/20 rounded-full"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              )}
+            {selectedVertical && selectedVertical !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                Vertical: {businessVerticals.find(v => v.id === selectedVertical)?.name}
+                <button 
+                  onClick={() => setSelectedVertical('all')}
+                  className="ml-1 hover:bg-muted-foreground/20 rounded-full"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
               {selectedGeolocation && selectedGeolocation !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
                   Region: {selectedGeolocation}

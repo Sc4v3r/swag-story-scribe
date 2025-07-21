@@ -19,6 +19,12 @@ interface Tag {
   color: string;
 }
 
+interface BusinessVertical {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 const WriteStory = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -28,11 +34,12 @@ const WriteStory = () => {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [businessVertical, setBusinessVertical] = useState('');
+  const [businessVerticalId, setBusinessVerticalId] = useState('');
   const [geolocation, setGeolocation] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [diagramUrl, setDiagramUrl] = useState<string>('');
   const [tags, setTags] = useState<Tag[]>([]);
+  const [businessVerticals, setBusinessVerticals] = useState<BusinessVertical[]>([]);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newTagName, setNewTagName] = useState('');
@@ -40,6 +47,7 @@ const WriteStory = () => {
 
   useEffect(() => {
     fetchTags();
+    fetchBusinessVerticals();
     if (editId) {
       fetchStoryForEdit();
     }
@@ -60,6 +68,21 @@ const WriteStory = () => {
     }
   };
 
+  const fetchBusinessVerticals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('business_verticals')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      
+      setBusinessVerticals(data || []);
+    } catch (error) {
+      console.error('Error fetching business verticals:', error);
+    }
+  };
+
   const fetchStoryForEdit = async () => {
     try {
       if (editId) {
@@ -73,7 +96,7 @@ const WriteStory = () => {
 
         setTitle(story.title);
         setContent(story.content);
-        setBusinessVertical(story.business_vertical || '');
+        setBusinessVerticalId(story.business_vertical_id || '');
         setGeolocation(story.geolocation || '');
         setDiagramUrl(story.diagram_url || '');
         setSelectedTags(story.story_tags.map((st: any) => st.tag_id));
@@ -88,22 +111,7 @@ const WriteStory = () => {
     }
   };
 
-  const getPredefinedVerticals = () => {
-    return [
-      'Financial Services',
-      'Healthcare',
-      'Government',
-      'Manufacturing',
-      'Technology',
-      'Retail',
-      'Education',
-      'Energy & Utilities',
-      'Professional Services',
-      'Telecommunications',
-      'Insurance',
-      'Transportation'
-    ];
-  };
+  // Remove the old getPredefinedVerticals function since we now fetch from database
 
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev => 
@@ -207,7 +215,7 @@ const WriteStory = () => {
           .update({
             title,
             content,
-            business_vertical: businessVertical || null,
+            business_vertical_id: businessVerticalId || null,
             geolocation: geolocation || null,
             diagram_url: diagramUrl || null,
             updated_at: new Date().toISOString()
@@ -224,7 +232,7 @@ const WriteStory = () => {
             title,
             content,
             author_id: user.id,
-            business_vertical: businessVertical || null,
+            business_vertical_id: businessVerticalId || null,
             geolocation: geolocation || null,
             diagram_url: diagramUrl || null
           })
@@ -334,14 +342,14 @@ const WriteStory = () => {
 
               <div>
                 <Label htmlFor="business-vertical">Business Vertical</Label>
-                <Select value={businessVertical} onValueChange={setBusinessVertical}>
+                <Select value={businessVerticalId} onValueChange={setBusinessVerticalId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select business vertical..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    {getPredefinedVerticals().map((vertical) => (
-                      <SelectItem key={vertical} value={vertical}>
-                        {vertical}
+                  <SelectContent className="bg-background border border-border shadow-md z-50">
+                    {businessVerticals.map((vertical) => (
+                      <SelectItem key={vertical.id} value={vertical.id}>
+                        {vertical.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -452,7 +460,11 @@ const WriteStory = () => {
                 <h2 className="text-2xl font-bold mb-2">{title || 'Untitled Story'}</h2>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>By {user?.email}</span>
-                  {businessVertical && <Badge variant="outline">{businessVertical}</Badge>}
+                  {businessVerticalId && businessVerticals.find(v => v.id === businessVerticalId) && (
+                    <Badge variant="outline">
+                      {businessVerticals.find(v => v.id === businessVerticalId)?.name}
+                    </Badge>
+                  )}
                   {geolocation && <Badge variant="outline">{geolocation}</Badge>}
                 </div>
               </div>

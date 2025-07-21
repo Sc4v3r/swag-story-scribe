@@ -13,7 +13,7 @@ interface Story {
   title: string;
   content: string;
   author_id: string;
-  business_vertical: string | null;
+  business_vertical_id: string | null;
   geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
@@ -30,6 +30,11 @@ interface Story {
       color: string;
     };
   }>;
+  business_verticals?: {
+    id: string;
+    name: string;
+    description?: string;
+  } | null;
 }
 
 const Dashboard = () => {
