@@ -100,7 +100,7 @@ const Stories = () => {
               .from('profiles')
               .select('display_name, email, department')
               .eq('user_id', story.author_id)
-              .single();
+              .maybeSingle();
             
             if (profileError) {
               console.log('Profile fetch error for story', story.id, ':', profileError);
@@ -174,14 +174,14 @@ const Stories = () => {
     }
 
     // Filter by tag
-    if (selectedTag) {
+    if (selectedTag && selectedTag !== 'all') {
       filtered = filtered.filter(story =>
         story.story_tags.some(st => st.tags.id === selectedTag)
       );
     }
 
     // Filter by business vertical
-    if (selectedVertical) {
+    if (selectedVertical && selectedVertical !== 'all') {
       filtered = filtered.filter(story =>
         story.business_vertical === selectedVertical
       );
@@ -313,7 +313,7 @@ const Stories = () => {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All tags</SelectItem>
+              <SelectItem value="all">All tags</SelectItem>
               {tags.map((tag) => (
                 <SelectItem key={tag.id} value={tag.id}>
                   <div className="flex items-center gap-2">
@@ -333,7 +333,7 @@ const Stories = () => {
               <SelectValue placeholder="Filter by vertical" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All verticals</SelectItem>
+              <SelectItem value="all">All verticals</SelectItem>
               {getUniqueVerticals().map((vertical) => (
                 <SelectItem key={vertical} value={vertical}>
                   {vertical}
@@ -356,7 +356,7 @@ const Stories = () => {
       </div>
 
       {/* Active Filters */}
-      {(selectedTag || selectedVertical || searchTerm) && (
+      {(selectedTag && selectedTag !== 'all' || selectedVertical && selectedVertical !== 'all' || searchTerm) && (
         <div className="flex gap-2 items-center">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {searchTerm && (
@@ -370,22 +370,22 @@ const Stories = () => {
               </button>
             </Badge>
           )}
-          {selectedTag && (
+          {selectedTag && selectedTag !== 'all' && (
             <Badge variant="secondary" className="gap-1">
               Tag: {tags.find(t => t.id === selectedTag)?.name}
               <button 
-                onClick={() => setSelectedTag('')}
+                onClick={() => setSelectedTag('all')}
                 className="ml-1 hover:bg-muted-foreground/20 rounded-full"
               >
                 ×
               </button>
             </Badge>
           )}
-          {selectedVertical && (
+          {selectedVertical && selectedVertical !== 'all' && (
             <Badge variant="secondary" className="gap-1">
               Vertical: {selectedVertical}
               <button 
-                onClick={() => setSelectedVertical('')}
+                onClick={() => setSelectedVertical('all')}
                 className="ml-1 hover:bg-muted-foreground/20 rounded-full"
               >
                 ×
@@ -397,8 +397,8 @@ const Stories = () => {
             size="sm" 
             onClick={() => {
               setSearchTerm('');
-              setSelectedTag('');
-              setSelectedVertical('');
+              setSelectedTag('all');
+              setSelectedVertical('all');
             }}
           >
             Clear all
