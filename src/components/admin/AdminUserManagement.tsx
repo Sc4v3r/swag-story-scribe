@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, UserPlus, AlertTriangle, UserX, Ban, Trash2 } from 'lucide-react';
+import { Shield, UserPlus, AlertTriangle, UserX, Ban, Trash2, Key } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -31,6 +32,8 @@ export function AdminUserManagement() {
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+  const [tempPassword, setTempPassword] = useState('');
 
   useEffect(() => {
     if (isAdmin) {
@@ -223,6 +226,65 @@ export function AdminUserManagement() {
     }
   };
 
+  const generateTempPassword = () => {
+    // Generate a secure temporary password
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const resetUserPassword = async (userId: string, userEmail: string) => {
+    try {
+      setResettingPassword(userId);
+      
+      // Generate a temporary password
+      const tempPass = generateTempPassword();
+      setTempPassword(tempPass);
+
+      // Call Supabase admin API to update user password
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        password: tempPass
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Password Reset Successful',
+        description: 'Temporary password generated. Make sure to share it securely with the user.',
+      });
+
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Password Reset Failed',
+        description: error.message || 'Failed to reset user password. You may need to use the Supabase dashboard for this operation.',
+        variant: 'destructive',
+      });
+      setTempPassword('');
+    } finally {
+      setResettingPassword(null);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: 'Copied to Clipboard',
+        description: 'Temporary password copied to clipboard.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Copy Failed',
+        description: 'Failed to copy to clipboard. Please copy manually.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!isAdmin) {
     return (
       <Card>
@@ -365,9 +427,91 @@ export function AdminUserManagement() {
                         <UserX className="h-3 w-3 mr-1" />
                         Unblock
                       </Button>
-                    )}
-                    
-                    <AlertDialog>
+                     )}
+                     
+                     <Dialog>
+                       <DialogTrigger asChild>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           disabled={resettingPassword === user.user_id}
+                         >
+                           {resettingPassword === user.user_id ? (
+                             <>
+                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1" />
+                               Resetting...
+                             </>
+                           ) : (
+                             <>
+                               <Key className="h-3 w-3 mr-1" />
+                               Reset Password
+                             </>
+                           )}
+                         </Button>
+                       </DialogTrigger>
+                       <DialogContent>
+                         <DialogHeader>
+                           <DialogTitle>Reset User Password</DialogTitle>
+                           <DialogDescription>
+                             This will generate a temporary password for {user.display_name || user.email}.
+                             Make sure to share the temporary password securely with the user.
+                           </DialogDescription>
+                         </DialogHeader>
+                         
+                         {tempPassword && (
+                           <div className="space-y-4">
+                             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                               <div className="flex items-center gap-2 text-amber-800 mb-2">
+                                 <AlertTriangle className="h-4 w-4" />
+                                 <span className="font-medium">Temporary Password Generated</span>
+                               </div>
+                               <div className="font-mono text-sm bg-white p-2 rounded border break-all">
+                                 {tempPassword}
+                               </div>
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => copyToClipboard(tempPassword)}
+                                 className="mt-2"
+                               >
+                                 Copy Password
+                               </Button>
+                             </div>
+                             <p className="text-sm text-muted-foreground">
+                               Please share this password securely with the user and ask them to change it immediately after logging in.
+                             </p>
+                           </div>
+                         )}
+                         
+                         <DialogFooter>
+                           {!tempPassword ? (
+                             <>
+                               <Button
+                                 variant="outline"
+                                 onClick={() => setTempPassword('')}
+                               >
+                                 Cancel
+                               </Button>
+                               <Button
+                                 onClick={() => resetUserPassword(user.user_id, user.email || '')}
+                                 disabled={resettingPassword === user.user_id}
+                               >
+                                 {resettingPassword === user.user_id ? 'Generating...' : 'Generate New Password'}
+                               </Button>
+                             </>
+                           ) : (
+                             <Button
+                               onClick={() => setTempPassword('')}
+                               className="w-full"
+                             >
+                               Close
+                             </Button>
+                           )}
+                         </DialogFooter>
+                       </DialogContent>
+                     </Dialog>
+                     
+                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           size="sm"
