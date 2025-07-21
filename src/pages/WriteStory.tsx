@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KillChainDiagramEditor } from '@/components/diagrams/KillChainDiagramEditor';
 import { DiagramGenerator } from '@/components/diagrams/DiagramGenerator';
+import { DiagramUpload } from '@/components/diagrams/DiagramUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -347,6 +348,11 @@ const WriteStory = () => {
 
         <TabsContent value="diagram">
           <div className="space-y-6">
+            <DiagramUpload 
+              onDiagramUploaded={(diagramData) => setDiagramUrl(diagramData)}
+              existingDiagramUrl={diagramUrl}
+            />
+            
             <KillChainDiagramEditor 
               storyType={getStoryTypeFromTags()}
               onDiagramSave={(diagramData) => setDiagramUrl(diagramData)}
