@@ -30,7 +30,6 @@ const navigationItems = [
 const adminItems = [
   { title: 'Admin Panel', url: '/admin', icon: Settings },
   { title: 'Manage Tags', url: '/admin/tags', icon: Tag },
-  { title: 'Manage Users', url: '/admin/users', icon: Users },
 ];
 
 export function AppSidebar() {
