@@ -1,4 +1,5 @@
 import { AdminUserManagement } from '@/components/admin/AdminUserManagement';
+import { UserStoriesManagement } from '@/components/admin/UserStoriesManagement';
 import { AuditLogsViewer } from '@/components/admin/AuditLogsViewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,23 +37,31 @@ const AdminPanel = () => {
 
       {/* Admin Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             User Management
+          </TabsTrigger>
+          <TabsTrigger value="user-stories" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            User Stories
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Audit Logs
           </TabsTrigger>
           <TabsTrigger value="overview" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+            <Shield className="h-4 w-4" />
             Overview
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
           <AdminUserManagement />
+        </TabsContent>
+
+        <TabsContent value="user-stories">
+          <UserStoriesManagement />
         </TabsContent>
 
         <TabsContent value="audit">
