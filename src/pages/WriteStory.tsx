@@ -35,6 +35,8 @@ const WriteStory = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
 
   useEffect(() => {
     fetchTags();
@@ -51,12 +53,8 @@ const WriteStory = () => {
         .order('name');
 
       if (error) throw error;
-
-      // Filter to only include cybersecurity tags (exclude business vertical tags)
-      const cybersecurityTags = ['External Pentest', 'Internal Pentest', 'Phishing', 'Domain Admin', 'OT', 'Wireless', 'Web App', 'PII data', 'PHI data', 'Stolen Laptop'];
-      const filteredTags = (data || []).filter(tag => cybersecurityTags.includes(tag.name));
       
-      setTags(filteredTags);
+      setTags(data || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
     }
@@ -113,6 +111,76 @@ const WriteStory = () => {
         ? prev.filter(id => id !== tagId)
         : [...prev, tagId]
     );
+  };
+
+  const generateRandomColor = () => {
+    const colors = [
+      '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', 
+      '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const createCustomTag = async () => {
+    if (!newTagName.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Tag name cannot be empty',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if tag already exists
+    const existingTag = tags.find(tag => 
+      tag.name.toLowerCase() === newTagName.trim().toLowerCase()
+    );
+    
+    if (existingTag) {
+      toast({
+        title: 'Tag Already Exists',
+        description: 'This tag already exists. Select it from the dropdown.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsCreatingTag(true);
+
+      const { data, error } = await supabase
+        .from('tags')
+        .insert({
+          name: newTagName.trim(),
+          color: generateRandomColor()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add the new tag to the tags list
+      setTags(prev => [...prev, data]);
+      
+      // Auto-select the newly created tag
+      setSelectedTags(prev => [...prev, data.id]);
+      
+      // Clear the input
+      setNewTagName('');
+
+      toast({
+        title: 'Success!',
+        description: 'Custom tag created and added to your story.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create custom tag',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingTag(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -313,24 +381,55 @@ const WriteStory = () => {
                     );
                   })}
                 </div>
-                <Select onValueChange={toggleTag}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Add tags..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tags.filter(tag => !selectedTags.includes(tag.id)).map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          {tag.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Existing tags dropdown */}
+                <div className="space-y-3">
+                  <Select onValueChange={toggleTag}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select existing tags..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border shadow-md z-50">
+                      {tags.filter(tag => !selectedTags.includes(tag.id)).map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: tag.color }}
+                            />
+                            {tag.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Custom tag creation */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Create new tag..."
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          createCustomTag();
+                        }
+                      }}
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={createCustomTag}
+                      disabled={isCreatingTag || !newTagName.trim()}
+                    >
+                      {isCreatingTag ? 'Creating...' : 'Add Tag'}
+                    </Button>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Create custom tags by typing a name and clicking "Add Tag" or pressing Enter.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
