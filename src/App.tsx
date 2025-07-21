@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
 import Stories from "./pages/Stories";
 import StoryDetail from "./pages/StoryDetail";
 import WriteStory from "./pages/WriteStory";
@@ -46,7 +47,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -60,12 +61,13 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={
               <PublicRoute>
                 <Auth />
               </PublicRoute>
             } />
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
@@ -75,11 +77,7 @@ const App = () => (
                 <Stories />
               </ProtectedRoute>
             } />
-            <Route path="/stories/:id" element={
-              <ProtectedRoute>
-                <StoryDetail />
-              </ProtectedRoute>
-            } />
+            <Route path="/stories/:id" element={<StoryDetail />} />
             <Route path="/write" element={
               <ProtectedRoute>
                 <WriteStory />
