@@ -5,18 +5,41 @@ import { TagsAndVerticalManagement } from '@/components/admin/TagsAndVerticalMan
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Users, FileText, Activity, Tag } from 'lucide-react';
 
 const AdminPanel = () => {
   const { isAdmin, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Determine the active tab based on the current route
   const getActiveTab = () => {
     if (location.pathname === '/admin/users') return 'users';
     if (location.pathname === '/admin/tags') return 'tags';
+    if (location.pathname === '/admin/user-stories') return 'user-stories';
+    if (location.pathname === '/admin/audit') return 'audit';
     return 'users';
+  };
+
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    switch (value) {
+      case 'users':
+        navigate('/admin/users');
+        break;
+      case 'tags':
+        navigate('/admin/tags');
+        break;
+      case 'user-stories':
+        navigate('/admin/user-stories');
+        break;
+      case 'audit':
+        navigate('/admin/audit');
+        break;
+      default:
+        navigate('/admin/users');
+    }
   };
 
   if (loading) {
@@ -45,7 +68,7 @@ const AdminPanel = () => {
       </div>
 
       {/* Admin Tabs */}
-      <Tabs value={getActiveTab()} className="space-y-6">
+      <Tabs value={getActiveTab()} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
