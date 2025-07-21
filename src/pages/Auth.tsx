@@ -46,6 +46,9 @@ const Auth = () => {
           <p className="text-muted-foreground">
             Share and discover organizational stories
           </p>
+          <Button variant="outline" onClick={() => navigate('/stories')} className="mt-4">
+            Browse Stories
+          </Button>
         </div>
 
         {/* Features Preview */}
