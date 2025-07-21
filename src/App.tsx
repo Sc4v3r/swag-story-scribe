@@ -67,11 +67,7 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/stories" element={
-              <ProtectedRoute>
-                <Stories />
-              </ProtectedRoute>
-            } />
+            <Route path="/stories" element={<Stories />} />
             <Route path="/write" element={
               <ProtectedRoute>
                 <WriteStory />

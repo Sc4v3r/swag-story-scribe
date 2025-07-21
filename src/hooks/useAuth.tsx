@@ -28,7 +28,8 @@ interface AuthContextType {
   userRole: UserRole | null;
   loading: boolean;
   isAdmin: boolean;
-  signInWithMicrosoft: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ data: any, error: any }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ data: any, error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
 }
@@ -111,24 +112,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithMicrosoft = async () => {
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      toast({
+        title: 'Authentication Error',
+        description: error.message || 'Failed to sign in',
+        variant: 'destructive',
+      });
+      return { data: null, error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, displayName?: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'azure',
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
-          redirectTo: redirectUrl,
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: displayName || email.split('@')[0],
+          },
         },
       });
 
       if (error) throw error;
+      
+      if (data.user && !data.session) {
+        toast({
+          title: 'Check Your Email',
+          description: 'Please check your email for a confirmation link.',
+        });
+      }
+      
+      return { data, error: null };
     } catch (error: any) {
       toast({
-        title: 'Authentication Error',
-        description: error.message || 'Failed to sign in with Microsoft',
+        title: 'Sign Up Error',
+        description: error.message || 'Failed to create account',
         variant: 'destructive',
       });
+      return { data: null, error };
     }
   };
 
@@ -196,7 +230,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userRole,
         loading,
         isAdmin,
-        signInWithMicrosoft,
+        signIn,
+        signUp,
         signOut,
         updateProfile,
       }}

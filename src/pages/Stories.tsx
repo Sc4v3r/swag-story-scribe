@@ -214,12 +214,21 @@ const Stories = () => {
             Discover and explore stories from across your organization
           </p>
         </div>
-        <Button asChild>
-          <Link to="/write">
-            <Plus className="mr-2 h-4 w-4" />
-            Write Story
-          </Link>
-        </Button>
+        {user ? (
+          <Button asChild>
+            <Link to="/write">
+              <Plus className="mr-2 h-4 w-4" />
+              Write Story
+            </Link>
+          </Button>
+        ) : (
+          <Button asChild>
+            <Link to="/auth">
+              <Plus className="mr-2 h-4 w-4" />
+              Sign In to Write
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
