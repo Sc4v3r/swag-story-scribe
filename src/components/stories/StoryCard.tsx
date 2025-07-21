@@ -55,100 +55,113 @@ export function StoryCard({ story, onEdit, onDelete, showActions = true }: Story
     : story.content;
 
   return (
-    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg leading-tight mb-2 line-clamp-2">
-              {story.title}
-            </h3>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span className="truncate">{authorName}</span>
-              {story.profiles?.department && (
-                <>
-                  <span>•</span>
-                  <span className="truncate">{story.profiles.department}</span>
-                </>
-              )}
+    <Link to={`/stories/${story.id}`} className="block h-full">
+      <Card className="h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-lg leading-tight mb-2 line-clamp-2">
+                {story.title}
+              </h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-3 w-3" />
+                <span className="truncate">{authorName}</span>
+                {story.profiles?.department && (
+                  <>
+                    <span>•</span>
+                    <span className="truncate">{story.profiles.department}</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          
-          {showActions && (canEdit || canDelete) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to={`/stories/${story.id}`} className="cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    View
-                  </Link>
-                </DropdownMenuItem>
-                {canEdit && (
-                  <DropdownMenuItem 
-                    onClick={() => onEdit?.(story)}
-                    className="cursor-pointer"
+            
+            {showActions && (canEdit || canDelete) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => e.preventDefault()} // Prevent link navigation when clicking dropdown
                   >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to={`/stories/${story.id}`} className="cursor-pointer">
+                      <Eye className="mr-2 h-4 w-4" />
+                      View
+                    </Link>
                   </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem 
-                    onClick={() => onDelete?.(story.id)}
-                    className="cursor-pointer text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 pb-3">
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {excerpt}
-        </p>
-      </CardContent>
-
-      <CardFooter className="pt-0 flex flex-col gap-3">
-        {/* Tags */}
-        {story.story_tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 w-full">
-            {story.story_tags.map(({ tags }) => (
-              <Badge 
-                key={tags.id} 
-                variant="secondary"
-                className="text-xs"
-                style={{ backgroundColor: `${tags.color}20`, color: tags.color, borderColor: tags.color }}
-              >
-                {tags.name}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {/* Footer info */}
-        <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            {story.business_vertical && (
-              <Badge variant="outline" className="text-xs">
-                {story.business_vertical}
-              </Badge>
+                  {canEdit && (
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onEdit?.(story);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onDelete?.(story.id);
+                      }}
+                      className="cursor-pointer text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
-          <span>
-            {formatDistanceToNow(new Date(story.created_at), { addSuffix: true })}
-          </span>
-        </div>
-      </CardFooter>
-    </Card>
+        </CardHeader>
+
+        <CardContent className="flex-1 pb-3">
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {excerpt}
+          </p>
+        </CardContent>
+
+        <CardFooter className="pt-0 flex flex-col gap-3">
+          {/* Tags */}
+          {story.story_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 w-full">
+              {story.story_tags.map(({ tags }) => (
+                <Badge 
+                  key={tags.id} 
+                  variant="secondary"
+                  className="text-xs"
+                  style={{ backgroundColor: `${tags.color}20`, color: tags.color, borderColor: tags.color }}
+                >
+                  {tags.name}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Footer info */}
+          <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              {story.business_vertical && (
+                <Badge variant="outline" className="text-xs">
+                  {story.business_vertical}
+                </Badge>
+              )}
+            </div>
+            <span>
+              {formatDistanceToNow(new Date(story.created_at), { addSuffix: true })}
+            </span>
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 }

@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Stories from "./pages/Stories";
+import StoryDetail from "./pages/StoryDetail";
 import WriteStory from "./pages/WriteStory";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -68,6 +69,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/stories" element={<Stories />} />
+            <Route path="/stories/:id" element={<StoryDetail />} />
             <Route path="/write" element={
               <ProtectedRoute>
                 <WriteStory />

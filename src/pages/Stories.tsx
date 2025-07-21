@@ -93,7 +93,7 @@ const Stories = () => {
         storiesData.map(async (story) => {
           console.log('Processing story:', story.id);
           
-          // Try to fetch profile (may fail for unauthenticated users)
+          // Try to fetch profile (may fail for unauthenticated users, that's ok)
           let profile = null;
           try {
             const { data: profileData, error: profileError } = await supabase
@@ -102,13 +102,14 @@ const Stories = () => {
               .eq('user_id', story.author_id)
               .maybeSingle();
             
-            if (profileError) {
+            // Only log error if it's not a permission issue
+            if (profileError && !profileError.message.includes('permission')) {
               console.log('Profile fetch error for story', story.id, ':', profileError);
-            } else {
-              profile = profileData;
             }
+            profile = profileData;
           } catch (error) {
-            console.log('Profile fetch failed for story author:', error);
+            // Continue without profile data for unauthenticated users
+            console.log('Profile fetch failed for story author, continuing without profile data');
           }
 
           // Fetch story tags
