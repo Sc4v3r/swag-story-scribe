@@ -29,7 +29,6 @@ const navigationItems = [
 
 const adminItems = [
   { title: 'Admin Panel', url: '/admin', icon: Settings },
-  { title: 'Manage Tags', url: '/admin/tags', icon: Tag },
 ];
 
 export function AppSidebar() {
