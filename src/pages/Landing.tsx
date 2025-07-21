@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Filter, Plus, PenTool, Users, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 interface Story {
   id: string;
@@ -247,18 +248,18 @@ const Landing = () => {
     );
   }
 
-  return (
+  const renderContent = () => (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header with Sign In Button */}
-      <div className="absolute top-0 right-0 p-4 z-10">
-        {!user && (
+      {/* Header with Sign In Button - only show for unauthenticated users */}
+      {!user && (
+        <div className="absolute top-0 right-0 p-4 z-10">
           <Button variant="outline" asChild>
             <Link to="/auth">
               Sign In
             </Link>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div className="border-b bg-background/50 backdrop-blur-sm">
@@ -484,6 +485,14 @@ const Landing = () => {
         )}
       </div>
     </div>
+  );
+
+  // If user is authenticated, wrap content in AppLayout (which includes sidebar)
+  // If user is not authenticated, show content directly
+  return user ? (
+    <AppLayout>{renderContent()}</AppLayout>
+  ) : (
+    renderContent()
   );
 };
 
