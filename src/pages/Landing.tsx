@@ -249,6 +249,17 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Header with Sign In Button */}
+      <div className="absolute top-0 right-0 p-4 z-10">
+        {!user && (
+          <Button variant="outline" asChild>
+            <Link to="/auth">
+              Sign In
+            </Link>
+          </Button>
+        )}
+      </div>
+
       {/* Hero Section */}
       <div className="border-b bg-background/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-12">
@@ -260,15 +271,7 @@ const Landing = () => {
               Discover real-world penetration testing stories, techniques, and insights from security professionals across various industries.
             </p>
             
-            {!user ? (
-              <div className="flex justify-center">
-                <Button variant="outline" size="lg" asChild>
-                  <Link to="/auth">
-                    Sign In
-                  </Link>
-                </Button>
-              </div>
-            ) : (
+            {user && (
               <Button size="lg" asChild>
                 <Link to="/write">
                   <Plus className="mr-2 h-5 w-5" />
