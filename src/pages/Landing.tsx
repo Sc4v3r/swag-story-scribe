@@ -16,7 +16,7 @@ interface Story {
   title: string;
   content: string;
   author_id: string;
-  business_vertical_id: string | null;
+  business_vertical: string | null;
   geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
@@ -33,11 +33,6 @@ interface Story {
       color: string;
     };
   }>;
-  business_verticals?: {
-    id: string;
-    name: string;
-    description?: string;
-  } | null;
 }
 
 interface Tag {
@@ -46,19 +41,12 @@ interface Tag {
   color: string;
 }
 
-interface BusinessVertical {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 const Landing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stories, setStories] = useState<Story[]>([]);
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [businessVerticals, setBusinessVerticals] = useState<BusinessVertical[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +58,6 @@ const Landing = () => {
   useEffect(() => {
     fetchStories();
     fetchTags();
-    fetchBusinessVerticals();
   }, []);
 
   useEffect(() => {
@@ -84,7 +71,7 @@ const Landing = () => {
 
       const { data: storiesData, error: storiesError } = await supabase
         .from('stories')
-        .select('*, business_verticals(id, name, description)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (storiesError) {
@@ -155,27 +142,13 @@ const Landing = () => {
         return;
       }
       
-      setTags(data || []);
+      // Filter to only include cybersecurity tags (exclude business vertical tags)
+      const cybersecurityTags = ['External Pentest', 'Internal Pentest', 'Phishing', 'Domain Admin', 'OT', 'Wireless', 'Web App', 'PII data', 'PHI data', 'Stolen Laptop'];
+      const filteredTags = (data || []).filter(tag => cybersecurityTags.includes(tag.name));
+      
+      setTags(filteredTags);
     } catch (error) {
       console.error('Error fetching tags:', error);
-    }
-  };
-
-  const fetchBusinessVerticals = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('business_verticals')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching business verticals:', error);
-        return;
-      }
-      
-      setBusinessVerticals(data || []);
-    } catch (error) {
-      console.error('Error fetching business verticals:', error);
     }
   };
 
@@ -201,7 +174,7 @@ const Landing = () => {
     // Filter by business vertical
     if (selectedVertical && selectedVertical !== 'all') {
       filtered = filtered.filter(story =>
-        story.business_vertical_id === selectedVertical
+        story.business_vertical === selectedVertical
       );
     }
 
@@ -229,7 +202,22 @@ const Landing = () => {
     setFilteredStories(filtered);
   };
 
-  // Remove the old getPredefinedVerticals function since we now fetch from database
+  const getPredefinedVerticals = () => {
+    return [
+      'Education',
+      'Energy & Utilities',
+      'Financial Services',
+      'Government',
+      'Healthcare',
+      'Insurance',
+      'Manufacturing',
+      'Professional Services',
+      'Retail',
+      'Technology',
+      'Telecommunications',
+      'Transportation'
+    ];
+  };
 
   if (loading) {
     return (
@@ -308,7 +296,7 @@ const Landing = () => {
             </div>
             <div className="text-center p-4 rounded-lg bg-card/50 border">
               <Filter className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-2xl font-bold">{new Set(stories.map(s => s.business_vertical_id).filter(Boolean)).size}</div>
+              <div className="text-2xl font-bold">{new Set(stories.map(s => s.business_vertical)).size}</div>
               <div className="text-sm text-muted-foreground">Industries</div>
             </div>
           </div>
@@ -358,9 +346,9 @@ const Landing = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All verticals</SelectItem>
-                {businessVerticals.map((vertical) => (
-                  <SelectItem key={vertical.id} value={vertical.id}>
-                    {vertical.name}
+                {getPredefinedVerticals().map((vertical) => (
+                  <SelectItem key={vertical} value={vertical}>
+                    {vertical}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -419,7 +407,7 @@ const Landing = () => {
             )}
             {selectedVertical && selectedVertical !== 'all' && (
               <Badge variant="secondary" className="gap-1">
-                Vertical: {businessVerticals.find(v => v.id === selectedVertical)?.name}
+                Vertical: {selectedVertical}
                 <button 
                   onClick={() => setSelectedVertical('all')}
                   className="ml-1 hover:bg-muted-foreground/20 rounded-full"

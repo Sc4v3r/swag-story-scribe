@@ -117,7 +117,6 @@ export type Database = {
         Row: {
           author_id: string
           business_vertical: string | null
-          business_vertical_id: string | null
           content: string
           created_at: string
           diagram_url: string | null
@@ -129,7 +128,6 @@ export type Database = {
         Insert: {
           author_id: string
           business_vertical?: string | null
-          business_vertical_id?: string | null
           content: string
           created_at?: string
           diagram_url?: string | null
@@ -141,7 +139,6 @@ export type Database = {
         Update: {
           author_id?: string
           business_vertical?: string | null
-          business_vertical_id?: string | null
           content?: string
           created_at?: string
           diagram_url?: string | null
@@ -150,15 +147,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "stories_business_vertical_id_fkey"
-            columns: ["business_vertical_id"]
-            isOneToOne: false
-            referencedRelation: "business_verticals"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       story_tags: {
         Row: {

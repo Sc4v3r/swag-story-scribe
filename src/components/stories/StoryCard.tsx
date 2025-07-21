@@ -29,18 +29,13 @@ interface Story {
   title: string;
   content: string;
   author_id: string;
-  business_vertical_id: string | null;
+  business_vertical: string | null;
   geolocation: string | null;
   diagram_url: string | null;
   created_at: string;
   updated_at: string;
   profiles: Profile | null;
   story_tags: Array<{ tags: Tag }>;
-  business_verticals?: {
-    id: string;
-    name: string;
-    description?: string;
-  } | null;
 }
 
 interface StoryCardProps {
@@ -157,9 +152,9 @@ export function StoryCard({ story, onEdit, onDelete, showActions = true }: Story
           {/* Footer info */}
           <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              {story.business_verticals && (
+              {story.business_vertical && (
                 <Badge variant="outline" className="text-xs">
-                  {story.business_verticals.name}
+                  {story.business_vertical}
                 </Badge>
               )}
               {story.geolocation && (
