@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -323,12 +323,10 @@ const WriteStory = () => {
 
               <div>
                 <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Share your penetration testing story, methodology, findings, and impact..."
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={12}
+                  onChange={setContent}
+                  placeholder="Share your penetration testing story, methodology, findings, and impact..."
                 />
               </div>
 
@@ -489,9 +487,10 @@ const WriteStory = () => {
               )}
 
               <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap">
-                  {content || 'No content yet...'}
-                </div>
+                <div 
+                  className="rich-content"
+                  dangerouslySetInnerHTML={{ __html: content || '<p>No content yet...</p>' }}
+                />
               </div>
             </CardContent>
           </Card>

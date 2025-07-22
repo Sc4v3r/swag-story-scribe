@@ -94,6 +94,126 @@ All colors MUST be HSL.
   }
 }
 
+/* Quill Rich Text Editor Styles */
+.quill-theme-custom .ql-toolbar {
+  border-top: 1px solid hsl(var(--border));
+  border-left: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: none;
+  background: hsl(var(--background));
+  border-radius: calc(var(--radius)) calc(var(--radius)) 0 0;
+}
+
+.quill-theme-custom .ql-container {
+  border-bottom: 1px solid hsl(var(--border));
+  border-left: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-top: none;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border-radius: 0 0 calc(var(--radius)) calc(var(--radius));
+}
+
+.quill-theme-custom .ql-editor {
+  color: hsl(var(--foreground));
+  font-family: inherit;
+  line-height: 1.6;
+  min-height: 200px;
+}
+
+.quill-theme-custom .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+
+.quill-theme-custom .ql-snow .ql-picker {
+  color: hsl(var(--foreground));
+}
+
+.quill-theme-custom .ql-snow .ql-picker-options {
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius));
+}
+
+.quill-theme-custom .ql-snow .ql-picker-item:hover {
+  background: hsl(var(--accent));
+}
+
+.quill-theme-custom .ql-snow .ql-tooltip {
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius));
+  color: hsl(var(--popover-foreground));
+}
+
+.quill-theme-custom .ql-snow .ql-tooltip input[type=text] {
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+/* Rich content display styles */
+.rich-content {
+  line-height: 1.6;
+}
+
+.rich-content h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+.rich-content h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.75rem 0;
+}
+
+.rich-content h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.rich-content p {
+  margin: 0.5rem 0;
+}
+
+.rich-content ul, .rich-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.rich-content blockquote {
+  border-left: 4px solid hsl(var(--border));
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+.rich-content code {
+  background: hsl(var(--muted));
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.rich-content pre {
+  background: hsl(var(--muted));
+  padding: 1rem;
+  border-radius: calc(var(--radius));
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.rich-content pre code {
+  background: none;
+  padding: 0;
+}
+
 @layer base {
   * {
     @apply border-border;
