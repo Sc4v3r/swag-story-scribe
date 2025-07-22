@@ -230,9 +230,10 @@ const StoryDetail = () => {
             )}
 
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                {story.content}
-              </div>
+              <div 
+                className="text-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: story.content }}
+              />
             </div>
           </CardContent>
         </Card>
